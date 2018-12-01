@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const assert = require('assert');
+const { assert } = require('chai');
 const co = require('co');
 const dookie = require('../');
 const fs = require('fs');
@@ -152,6 +152,29 @@ describe('dookie:pull', function() {
       assert.equal(results.sample.length, 1);
       assert.equal(results.sample[0].x, 1);
       assert.ok(results.sample[0]._id.$oid);
+
+      done();
+    }).catch((error) => done(error));
+  });
+});
+
+describe('dookie:pull:collection', function() {
+  it('exports documents from a single collection', function(done) {
+    co(function*() {
+      const uri = 'mongodb://localhost:27017/test3';
+
+      const db = yield mongodb.MongoClient.connect(uri);
+      yield db.dropDatabase();
+      yield db.collection('sample').insert({ x: 1 });
+      yield db.collection('sample2').insert({ y: 1 });
+
+      const results = yield dookie.pull(uri, {collection:"sample2"});
+
+      //assert.equal(Object.keys(results).length, 1);
+      assert.notExists(results.sample);
+      assert.equal(results.sample2.length, 1);
+      assert.equal(results.sample2[0].y, 1);
+      assert.ok(results.sample2[0]._id.$oid);
 
       done();
     }).catch((error) => done(error));

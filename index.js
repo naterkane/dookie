@@ -121,11 +121,12 @@ function expand(extensions, doc) {
   });
 }
 
-function pull(uri, options) {
+function pull(uri, options = {}) {
   return co(function*() {
     const db = yield mongodb.MongoClient.connect(uri);
-
-    const collections = yield db.listCollections().toArray();
+    let collections = (options.collection) ?
+      [{"name":options.collection}] :
+      yield db.listCollections().toArray();
 
     let promises = [];
     let filteredCollections = [];

@@ -86,7 +86,7 @@ Dookie can push this file to MongoDB for you.
         { _id: `Guns N' Roses`, members: ['Axl Rose', 'Slash'] }
       ]);
     })
-  
+
 ```
 
 ## It can $require external files
@@ -143,7 +143,7 @@ from `child.yml` as well.
         { _id: `Guns N' Roses`, members: ['Axl Rose'] }
       ]);
     })
-  
+
 ```
 
 ## It supports inheritance via $extend
@@ -189,7 +189,7 @@ people:
         { band: `Guns N' Roses`, _id: 'Slash' }
       ]);
     })
-  
+
 ```
 
 ## It can evaluate code with $eval
@@ -230,7 +230,7 @@ people:
         { _id: 0, firstName: 'Axl', lastName: 'Rose', name: 'Axl Rose' }
       ]);
     })
-  
+
 ```
 
 ## It can pull() data out of MongoDB
@@ -258,5 +258,24 @@ database in tests with ease.
         { _id: 0, firstName: 'Axl', lastName: 'Rose', name: 'Axl Rose' }
       ]);
     })
-  
+
+```
+
+### do you want to specify a single collection?
+
+```javascript
+
+    co(function*() {
+      const mongodbUri = 'mongodb://localhost:27017/test';
+      // Insert data into dookie
+      // Or, at the command line:
+      // `dookie pull --db test --file ./output.json`
+      const json = yield dookie.pull(mongodbUri, {collection:'people'});
+
+      assert.deepEqual(Object.keys(json), ['people']);
+      assert.deepEqual(json.people, [
+        { _id: 0, firstName: 'Axl', lastName: 'Rose', name: 'Axl Rose' }
+      ]);
+    })
+
 ```
