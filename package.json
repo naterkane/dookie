@@ -9,7 +9,8 @@
     "test",
     "data",
     "dataset",
-    "import"
+    "import",
+    "json"
   ],
   "scripts": {
     "test": "./test.sh",

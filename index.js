@@ -130,13 +130,22 @@ function pull(uri, options = {}) {
 
     let promises = [];
     let filteredCollections = [];
-    for (let i = 0; i < collections.length; ++i) {
-      let namespace = ns(`test.${collections[i].name}`);
-      if (namespace.system || namespace.oplog || namespace.special) {
-        continue;
+    if (collections.length >= 1){
+
+      for (let i = 0; i < collections.length; ++i) {
+        let namespace = ns(`test.${collections[i].name}`);
+        if (namespace.system || namespace.oplog || namespace.special) {
+          continue;
+        }
+        filteredCollections.push(collections[i].name);
+        if (options.query) {
+          let query = options.query;
+          //filteredCollections.push(collections[i].name);
+          promises.push(db.collection(collections[i].name).find(query).toArray());
+        } else {
+          promises.push(db.collection(collections[i].name).find({}).toArray());
+        }
       }
-      filteredCollections.push(collections[i].name);
-      promises.push(db.collection(collections[i].name).find({}).toArray());
     }
 
     const contents = yield promises;
@@ -154,12 +163,15 @@ function pull(uri, options = {}) {
   });
 }
 
-function pullToStream(uri, stream) {
+function pullToStream(uri, stream, options = {}) {
   return co(function*() {
     const db = yield mongodb.MongoClient.connect(uri);
-    const collections = db.listCollections();
+    const collections = (options.collection) ?
+      db.listCollections({"name":options.collection}) :
+      db.listCollections();
+
     stream.write(`{\n`);
-    let first = true;
+    let firstCol = true;
     for (let collection = yield collections.next();
         collection != null;
         collection = yield collections.next()) {
@@ -167,20 +179,29 @@ function pullToStream(uri, stream) {
       if (namespace.system || namespace.oplog || namespace.special) {
         continue;
       }
-      if (!first) {
-        stream.write(',\n');
-        first = false;
+      if (!firstCol) {
+        stream.write(`,\n`);
       }
+      firstCol = false;
       stream.write(`"${collection.name}": [\n`);
+      let cursor =  ((options.query) ?
+        db.collection(collection.name).find(options.query) :
+        db.collection(collection.name).find());
 
-      const cursor = db.collection(collection.name).find();
+      let firstDoc = true;
       for (let doc = yield cursor.next();
-          doc != null;
+          doc !== null;
           doc = yield cursor.next()) {
-        stream.write(JSON.stringify(ejson.serialize(doc), null, '  '));
-      }
 
+        if (!firstDoc) {
+          stream.write(`,\n`);
+        }
+        firstDoc = false;
+        stream.write(JSON.stringify(ejson.serialize(doc), null, '  '));
+
+      }
       stream.write(`\n]`);
+      firstDoc = true;
     }
     stream.write(`\n}`);
   });
