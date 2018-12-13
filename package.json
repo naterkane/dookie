@@ -9,7 +9,8 @@
     "test",
     "data",
     "dataset",
-    "import"
+    "import",
+    "json"
   ],
   "scripts": {
     "test": "./test.sh",
@@ -41,10 +42,22 @@
   "engines": {
     "node": ">= 4.0.0"
   },
-  "bin": "./bin/dookie.js",
+  "bin": {
+    "dookie": "./bin/dookie.js"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/naterkane/dookie.git"
   },
-  "license": "SEE LICENSE IN LICENSE"
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/naterkane/dookie/issues"
+  },
+  "homepage": "https://github.com/naterkane/dookie#readme",
+  "main": "index.js",
+  "directories": {
+    "example": "example",
+    "test": "test"
+  },
+  "author": "Nater Kane <nater@naterkane.com>"
 }
