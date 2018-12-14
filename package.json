@@ -1,6 +1,6 @@
 {
-  "name": "dookie",
-  "version": "0.2.1",
+  "name": "@naterkane/dookie",
+  "version": "0.2.3",
   "description": "Stylus-inspired preprocessor for MongoDB data sets and fixtures",
   "keywords": [
     "mongodb",
@@ -9,10 +9,12 @@
     "test",
     "data",
     "dataset",
-    "import"
+    "import",
+    "json"
   ],
   "scripts": {
-    "test": "mocha ./test/*.test.js"
+    "test": "./test.sh",
+    "test:ci": "mocha ./test/*.test.js"
   },
   "dependencies": {
     "JSONStream": "1.1.1",
@@ -33,15 +35,29 @@
     "acquit": "0.4.0",
     "acquit-ignore": "0.0.3",
     "acquit-markdown": "0.0.2",
+    "chai": "^4.2.0",
     "lodash": "4.x",
     "mocha": "2.2.4"
   },
   "engines": {
     "node": ">= 4.0.0"
   },
-  "bin": "./bin/dookie.js",
+  "bin": {
+    "dookie": "./bin/dookie.js"
+  },
   "repository": {
     "type": "git",
-    "url": "git://github.com/vkarpov15/dookie.git"
-  }
+    "url": "git://github.com/naterkane/dookie.git"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/naterkane/dookie/issues"
+  },
+  "homepage": "https://github.com/naterkane/dookie#readme",
+  "main": "index.js",
+  "directories": {
+    "example": "example",
+    "test": "test"
+  },
+  "author": "Nater Kane <nater@naterkane.com>"
 }

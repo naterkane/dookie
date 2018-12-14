@@ -13,6 +13,7 @@ commander.
   usage('dookie (pull|push) --file <file> --db <database name>').
   option('-f, --file <file>', 'File to read/write from').
   option('-d, --db <database>', 'Database to read/write from').
+  option('-c, --col <collection>' 'Collection to read from (if reading)').
   option('-u, --uri <uri>', 'MongoDB URI to use (mongodb://localhost:27017 by default)').
   option('--dropDatabase', 'Drop database when pushing').
   parse(process.argv);
@@ -36,9 +37,10 @@ if (!commander.db && !commander.uri) {
 
 if (cmd === 'pull') {
   const uri = commander.uri || `mongodb://localhost:27017/${commander.db}`;
+  const options = (commander.collaction)? {collection:commander.collection} : {}
   console.log(`Writing data from ${uri} to ${commander.file}`);
   co(function*() {
-    const res = yield dookie.pull(uri);
+    const res = yield dookie.pull(uri, options);
     const stringify = JSONStream.stringifyObject();
     stringify.pipe(fs.createWriteStream(commander.file)).
       on('finish', () => {

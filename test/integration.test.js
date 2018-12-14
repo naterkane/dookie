@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const assert = require('assert');
+const { assert } = require('chai');
 const co = require('co');
 const dookie = require('../');
 const fs = require('fs');
@@ -156,6 +156,58 @@ describe('dookie:pull', function() {
       done();
     }).catch((error) => done(error));
   });
+
+  describe('dookie:pull:collection', function() {
+    it('exports documents from a single collection', function(done) {
+      co(function*() {
+        const uri = 'mongodb://localhost:27017/test3';
+
+        const db = yield mongodb.MongoClient.connect(uri);
+        yield db.dropDatabase();
+        yield db.collection('sample').insert({ x: 1 });
+        yield db.collection('sample2').insert({ y: 1 });
+
+        const results = yield dookie.pull(uri, {collection:"sample2"});
+
+        //assert.equal(Object.keys(results).length, 1);
+        assert.notExists(results.sample);
+        assert.equal(results.sample2.length, 1);
+        assert.equal(results.sample2[0].y, 1);
+        assert.ok(results.sample2[0]._id.$oid);
+
+        done();
+      }).catch((error) => done(error));
+    });
+    it('exports documents from a single collection with a query', function(done) {
+      co(function*() {
+        const uri = 'mongodb://localhost:27017/test3';
+
+        const db = yield mongodb.MongoClient.connect(uri);
+        yield db.dropDatabase();
+        yield db.collection('sample').insert({ x: 1 });
+        yield db.collection('sample').insert({ y: 5 });
+        yield db.collection('sample2').insert({ x: 1 });
+        yield db.collection('sample2').insert({ z: 1 });
+        yield db.collection('sample2').insert({ y: 1 });
+        yield db.collection('sample2').insert({ y: 2 });
+        yield db.collection('sample2').insert({ y: 3 });
+        yield db.collection('sample2').insert({ y: 4 });
+        yield db.collection('sample2').insert({ y: 5 });
+
+        const results = yield dookie.pull(uri, {collection: "sample2", query: { y: { $gte: 3 } } });
+
+        //assert.equal(Object.keys(results).length, 1);
+        assert.notExists(results.sample);
+        assert.equal(results.sample2.length, 3);
+        assert.equal(results.sample2[0].y, 3);
+        assert.equal(results.sample2[1].y, 4);
+        assert.equal(results.sample2[2].y, 5);
+        assert.ok(results.sample2[0]._id.$oid);
+
+        done();
+      }).catch((error) => done(error));
+    });
+  });
 });
 
 describe('dookie:pullToStream', function() {
@@ -166,6 +218,7 @@ describe('dookie:pullToStream', function() {
       const db = yield mongodb.MongoClient.connect(uri);
       yield db.dropDatabase();
       yield db.collection('sample').insert({ x: 1 });
+      yield db.collection('sample2').insert({ x: 2 });
 
       const ws = new stream.Writable();
       let str = '';
@@ -177,11 +230,117 @@ describe('dookie:pullToStream', function() {
 
       assert.ok(str);
       const streamed = JSON.parse(str);
-      assert.deepEqual(Object.keys(streamed), ['sample']);
+      assert.deepEqual(Object.keys(streamed), ['sample', 'sample2']);
       assert.equal(streamed['sample'].length, 1);
       assert.deepEqual(_.omit(streamed['sample'][0], '_id'), { x: 1 });
 
       done();
     }).catch((error) => done(error));
+  });it('streams documents with a query', function(done) {
+    co(function*() {
+      const uri = 'mongodb://localhost:27017/test3';
+
+      const db = yield mongodb.MongoClient.connect(uri);
+      yield db.dropDatabase();
+      yield db.collection('sample').insert({ x: 1 });
+      yield db.collection('sample').insert({ y: 5 });
+      yield db.collection('sample2').insert({ x: 1 });
+      yield db.collection('sample2').insert({ z: 1 });
+      yield db.collection('sample2').insert({ y: 1 });
+      yield db.collection('sample2').insert({ y: 2 });
+      yield db.collection('sample2').insert({ y: 3 });
+      yield db.collection('sample2').insert({ y: 4 });
+      yield db.collection('sample2').insert({ y: 5 });
+
+      const ws = new stream.Writable();
+      let str = '';
+      ws._write = (chunk, enc, next) => {
+        str += chunk.toString('utf8');
+        next();
+      };
+
+      const results = yield dookie.pullToStream(uri, ws, { query: { y: { $gte: 3 } } });
+
+      assert.ok(str);
+      const streamed = JSON.parse(str);
+      //assert.equal(Object.keys(results).length, 1);
+
+      assert.deepEqual(Object.keys(streamed), ['sample', 'sample2']);
+      assert.equal(streamed['sample'].length, 1);
+      assert.deepEqual(_.omit(streamed['sample'][0], '_id'), { y: 5 });
+      assert.equal(streamed['sample2'].length, 3);
+      assert.deepEqual(_.omit(streamed['sample2'][0], '_id'), { y: 3 });
+      assert.deepEqual(_.omit(streamed['sample2'][1], '_id'), { y: 4 });
+      assert.deepEqual(_.omit(streamed['sample2'][2], '_id'), { y: 5 });
+
+      done();
+    }).catch((error) => done(error));
+  });
+  describe('dookie:pullToStream:collection', function() {
+    it('streams documents from a single collection', function(done) {
+      co(function*() {
+        const uri = 'mongodb://localhost:27017/test3';
+
+        const db = yield mongodb.MongoClient.connect(uri);
+        yield db.dropDatabase();
+        yield db.collection('sample').insert({ x: 1 });
+        yield db.collection('sample2').insert({ y: 1 });
+        const ws = new stream.Writable();
+        let str = '';
+        ws._write = (chunk, enc, next) => {
+          str += chunk.toString('utf8');
+          next();
+        };
+
+        const results = yield dookie.pullToStream(uri, ws, {collection:"sample2"});
+
+        assert.ok(str);
+        const streamed = JSON.parse(str);
+        //assert.equal(Object.keys(results).length, 1);
+        assert.deepEqual(Object.keys(streamed), ['sample2']);
+        assert.equal(streamed['sample2'].length, 1);
+        assert.deepEqual(_.omit(streamed['sample2'][0], '_id'), { y: 1 });
+
+        done();
+      }).catch((error) => done(error));
+    });
+    it('streams documents from a single collection with a query', function(done) {
+      co(function*() {
+        const uri = 'mongodb://localhost:27017/test3';
+
+        const db = yield mongodb.MongoClient.connect(uri);
+        yield db.dropDatabase();
+        yield db.collection('sample').insert({ x: 1 });
+        yield db.collection('sample').insert({ y: 5 });
+        yield db.collection('sample2').insert({ x: 1 });
+        yield db.collection('sample2').insert({ z: 1 });
+        yield db.collection('sample2').insert({ y: 1 });
+        yield db.collection('sample2').insert({ y: 2 });
+        yield db.collection('sample2').insert({ y: 3 });
+        yield db.collection('sample2').insert({ y: 4 });
+        yield db.collection('sample2').insert({ y: 5 });
+
+        const ws = new stream.Writable();
+        let str = '';
+        ws._write = (chunk, enc, next) => {
+          str += chunk.toString('utf8');
+          next();
+        };
+
+        const results = yield dookie.pullToStream(uri, ws, {collection:"sample2", query: { y: { $gte: 3 } } });
+
+        assert.ok(str);
+        const streamed = JSON.parse(str);
+        //assert.equal(Object.keys(results).length, 1);
+
+        assert.deepEqual(Object.keys(streamed), ['sample2']);
+        assert.equal(streamed['sample2'].length, 3);
+        assert.deepEqual(_.omit(streamed['sample2'][0], '_id'), { y: 3 });
+        assert.deepEqual(_.omit(streamed['sample2'][1], '_id'), { y: 4 });
+        assert.deepEqual(_.omit(streamed['sample2'][2], '_id'), { y: 5 });
+
+        done();
+      }).catch((error) => done(error));
+    });
   });
 });
